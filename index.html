@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CleanReach | A Cleaner Nigeria</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;color:#18352a;background:#f7fbf8}
+header{background:#fff;padding:18px 6%;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:25px;font-weight:bold;color:#176b4d}
+.hero{padding:65px 7%;background:#e5f5e9;text-align:center}
+h1{font-size:42px;line-height:1.15;margin:15px 0}
+p{line-height:1.7;color:#53675c}
+.btn{display:inline-block;background:#176b4d;color:white;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:bold;border:0}
+section{padding:38px 7%}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.card{background:white;padding:22px;border-radius:14px;border:1px solid #dce9df}
+label{display:block;margin-top:15px;font-weight:bold}
+input,select,textarea{width:100%;padding:13px;margin-top:7px;border:1px solid #cbd9cf;border-radius:7px;font:inherit}
+textarea{min-height:90px}
+form{background:white;padding:22px;border-radius:14px}
+footer{background:#103d2e;color:white;text-align:center;padding:25px}
+footer p{color:#e0eee5}
+</style>
+</head>
+<body>
+<header><div class="logo">♻️ CleanReach</div><a class="btn" href="#request">Request Pickup</a></header>
+<div class="hero">
+<p><strong>A CLEANER NIGERIA STARTS WITH US</strong></p>
+<h1>Waste collection,<br>made simple.</h1>
+<p>CleanReach aims to connect households with convenient waste collection services, starting in Benin City, Edo State, and growing across Nigeria.</p>
+<a class="btn" href="#request">Request a Pickup</a>
+</div>
+<section>
+<h2>How CleanReach Works</h2>
+<div class="cards">
+<div class="card"><h3>1. Request</h3><p>Tell us your area and the household waste you need collected.</p></div>
+<div class="card"><h3>2. Confirmation</h3><p>We confirm service availability, collection arrangements and pricing.</p></div>
+<div class="card"><h3>3. Collection</h3><p>Collection is arranged through an appropriate waste-management provider.</p></div>
+</div>
+</section>
+<section id="request">
+<h2>Request a Waste Pickup</h2>
+<p>Submit your details to prepare a request message. A booking is not confirmed until we reply.</p>
+<form id="pickup">
+<label>Your name</label><input id="name" required placeholder="Enter your name">
+<label>Phone number</label><input id="phone" required type="tel" placeholder="Your phone number">
+<label>Neighbourhood / area</label><input id="area" required placeholder="e.g. Ring Road, Benin City">
+<label>Amount of waste</label>
+<select id="amount"><option>One or two bags</option><option>Several bags</option><option>Large amount / unsure</option></select>
+<label>Preferred collection day</label>
+<select id="day"><option>Flexible</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select>
+<label>Extra details</label><textarea id="notes" placeholder="Optional details or nearby landmark"></textarea>
+<p><label style="font-weight:normal"><input type="checkbox" required style="width:auto"> I agree that CleanReach may use these details to reply to my request.</label></p>
+<button class="btn" type="submit">Prepare Request</button>
+</form>
+<div id="result" class="card" hidden></div>
+</section>
+<section>
+<h2>Our Promise</h2>
+<p>We aim to make household waste collection more convenient and support cleaner communities. Service areas, prices and collection dates must be confirmed before booking.</p>
+<p><strong>Important:</strong> CleanReach is launching in stages. We will confirm authorized collection partners and applicable permits before offering collections.</p>
+</section>
+<footer><h2>CleanReach ♻️</h2><p>A cleaner Nigeria starts with us.</p><p>Benin City, Edo State, Nigeria</p><p>© 2026 CleanReach</p></footer>
+<script>
+document.getElementById('pickup').addEventListener('submit',function(e){
+e.preventDefault();
+const msg='Hello CleanReach, I want to request a household waste pickup.%0AName: '+encodeURIComponent(document.getElementById('name').value)+'%0APhone: '+encodeURIComponent(document.getElementById('phone').value)+'%0AArea: '+encodeURIComponent(document.getElementById('area').value)+'%0AAmount: '+encodeURIComponent(document.getElementById('amount').value)+'%0APreferred day: '+encodeURIComponent(document.getElementById('day').value)+'%0ADetails: '+encodeURIComponent(document.getElementById('notes').value);
+const box=document.getElementById('result');
+box.hidden=false;
+box.innerHTML='<h3>Request message ready</h3><p>Your details have not been sent. Copy the message below and send it to CleanReach once an official business WhatsApp number is available.</p><textarea id="message"></textarea><button class="btn" id="copy" type="button">Copy message</button>';
+document.getElementById('message').value=decodeURIComponent(msg.replaceAll('%0A','\n'));
+document.getElementById('copy').onclick=async function(){try{await navigator.clipboard.writeText(document.getElementById('message').value);this.textContent='Copied!'}catch(err){document.getElementById('message').select();this.textContent='Select and copy the text'}};
+box.scrollIntoView({behavior:'smooth'});
+});
+</script>
+</body>
+</html>
