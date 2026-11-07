@@ -1,1 +1,340 @@
 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanReach Owner Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f3f6f4;
+      color: #17251d;
+    }
+    .container { max-width: 1000px; margin: auto; }
+    header { margin-bottom: 25px; }
+    h1 { color: #147a43; margin-bottom: 5px; }
+    .muted { color: #68766d; font-size: 14px; }
+    .panel, .request, .stat {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px #0000000c;
+    }
+    input, button, select {
+      width: 100%;
+      padding: 13px;
+      margin: 7px 0;
+      border: 1px solid #d5ded8;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    button {
+      background: #147a43;
+      color: white;
+      border: 0;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button.secondary { background: #34483b; }
+    button:disabled { opacity: .6; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .stat strong { display: block; font-size: 25px; color: #147a43; }
+    .request h3 { margin-top: 0; }
+    .request p { line-height: 1.5; overflow-wrap: anywhere; }
+    .request img {
+      display: block;
+      width: 100%;
+      max-width: 350px;
+      border-radius: 9px;
+      margin: 12px 0;
+    }
+    .hidden { display: none; }
+    .status { font-weight: bold; color: #147a43; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .actions a {
+      display: inline-block;
+      padding: 10px;
+      border-radius: 7px;
+      background: #e6f4eb;
+      color: #126c3a;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    #message { margin: 12px 0; color: #b42318; }
+    @media (min-width: 650px) {
+      .stats { grid-template-columns: repeat(4, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>CleanReach</h1>
+    <p class="muted">Owner dashboard — manage pickup requests</p>
+  </header>
+
+  <section id="loginPanel" class="panel">
+    <h2>Owner Login</h2>
+    <p class="muted">Sign in with your CleanReach owner account.</p>
+    <input id="email" type="email" placeholder="Owner email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="loginButton" onclick="login()">Login</button>
+    <p id="message"></p>
+  </section>
+
+  <section id="dashboard" class="hidden">
+    <div class="panel">
+      <div class="actions">
+        <button onclick="loadRequests()">Refresh Requests</button>
+        <button class="secondary" onclick="logout()">Logout</button>
+      </div>
+      <p id="welcome" class="muted"></p>
+    </div>
+
+    <div class="stats">
+      <div class="stat">Total Requests<strong id="total">0</strong></div>
+      <div class="stat">Pending<strong id="pending">0</strong></div>
+      <div class="stat">Accepted<strong id="accepted">0</strong></div>
+      <div class="stat">Completed<strong id="completed">0</strong></div>
+    </div>
+
+    <h2>Pickup Requests</h2>
+    <p id="requestMessage" class="muted">Loading requests...</p>
+    <div id="requests"></div>
+  </section>
+</div>
+
+<script>
+const SUPABASE_URL = "https://pjclluejnshrmeklsufd.supabase.co";
+const SUPABASE_KEY = "sb_publishable_iF-KAbFI2_GiiDwkykXv5A_jSYGbr78";
+const OWNER_EMAIL = "cleanreach2@gmail.com";
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const loginPanel = document.getElementById("loginPanel");
+const dashboard = document.getElementById("dashboard");
+const message = document.getElementById("message");
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[char]);
+}
+
+function showLogin(error = "") {
+  loginPanel.classList.remove("hidden");
+  dashboard.classList.add("hidden");
+  message.textContent = error;
+}
+
+async function showDashboard(user) {
+  if (!user || user.email?.toLowerCase() !== OWNER_EMAIL) {
+    await db.auth.signOut();
+    showLogin("Access denied. This account is not the CleanReach owner.");
+    return;
+  }
+
+  loginPanel.classList.add("hidden");
+  dashboard.classList.remove("hidden");
+  document.getElementById("welcome").textContent =
+    "Logged in as " + user.email;
+
+  await loadRequests();
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const button = document.getElementById("loginButton");
+
+  if (!email || !password) {
+    message.textContent = "Enter your email and password.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Signing in...";
+  message.textContent = "";
+
+  const { data, error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  button.disabled = false;
+  button.textContent = "Login";
+
+  if (error) {
+    message.textContent = error.message;
+    return;
+  }
+
+  await showDashboard(data.user);
+}
+
+async function logout() {
+  await db.auth.signOut();
+  showLogin();
+}
+
+function formatDate(value) {
+  if (!value) return "Not available";
+  return new Date(value).toLocaleString();
+}
+
+function whatsappNumber(phone) {
+  let number = String(phone || "").replace(/\D/g, "");
+  if (number.startsWith("0")) number = "234" + number.slice(1);
+  return number;
+}
+
+async function loadRequests() {
+  const output = document.getElementById("requests");
+  const statusMessage = document.getElementById("requestMessage");
+
+  output.innerHTML = "";
+  statusMessage.textContent = "Loading requests...";
+
+  const { data, error } = await db
+    .from("pickup_requests")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    statusMessage.textContent = "Could not load requests: " + error.message;
+    return;
+  }
+
+  const rows = data || [];
+  document.getElementById("total").textContent = rows.length;
+  document.getElementById("pending").textContent =
+    rows.filter(r => (r.status || "pending") === "pending").length;
+  document.getElementById("accepted").textContent =
+    rows.filter(r => r.status === "accepted").length;
+  document.getElementById("completed").textContent =
+    rows.filter(r => r.status === "completed").length;
+
+  if (!rows.length) {
+    statusMessage.textContent = "No pickup requests have been submitted yet.";
+    return;
+  }
+
+  statusMessage.textContent = rows.length + " request(s) found.";
+
+  for (const r of rows) {
+    const card = document.createElement("article");
+    card.className = "request";
+
+    let photoHTML = "";
+    if (r.photo_path) {
+      const { data: photo, error: photoError } = await db.storage
+        .from("waste-photos")
+        .createSignedUrl(r.photo_path, 3600);
+
+      if (!photoError && photo?.signedUrl) {
+        photoHTML = `<p><strong>Waste photo:</strong></p>
+          <a href="${escapeHTML(photo.signedUrl)}" target="_blank" rel="noopener">
+            <img src="${escapeHTML(photo.signedUrl)}" alt="Customer waste photo">
+          </a>`;
+      } else {
+        photoHTML = "<p>Photo could not be loaded.</p>";
+      }
+    }
+
+    const status = r.status || "pending";
+    const phone = whatsappNumber(r.phone);
+    const whatsappText = encodeURIComponent(
+      "Hello " + (r.name || "") + ", this is CleanReach regarding your waste pickup request."
+    );
+
+    const emailLink = r.email
+      ? `<a href="mailto:${encodeURIComponent(r.email)}">Email customer</a>`
+      : "";
+
+    const whatsappLink = phone
+      ? `<a href="https://wa.me/${encodeURIComponent(phone)}?text=${whatsappText}" target="_blank" rel="noopener">WhatsApp customer</a>`
+      : "";
+
+    card.innerHTML = `
+      <h3>${escapeHTML(r.name || "Customer")}</h3>
+      <p><strong>Phone:</strong> ${escapeHTML(r.phone)}</p>
+      <p><strong>Email:</strong> ${escapeHTML(r.email || "Not provided")}</p>
+      <p><strong>Area:</strong> ${escapeHTML(r.area)}</p>
+      <p><strong>Waste amount:</strong> ${escapeHTML(r.amount)}</p>
+      <p><strong>Preferred day:</strong> ${escapeHTML(r.preferred_day)}</p>
+      <p><strong>Notes:</strong> ${escapeHTML(r.notes || "None")}</p>
+      <p><strong>Submitted:</strong> ${escapeHTML(formatDate(r.created_at))}</p>
+      <p><strong>Current status:</strong>
+        <span class="status">${escapeHTML(status)}</span>
+      </p>
+      ${photoHTML}
+      <div class="actions">${whatsappLink}${emailLink}</div>
+      <label for="status-${escapeHTML(r.id)}">Update request status</label>
+      <select id="status-${escapeHTML(r.id)}">
+        <option value="pending" ${status === "pending" ? "selected" : ""}>Pending</option>
+        <option value="accepted" ${status === "accepted" ? "selected" : ""}>Accepted</option>
+        <option value="completed" ${status === "completed" ? "selected" : ""}>Completed</option>
+        <option value="cancelled" ${status === "cancelled" ? "selected" : ""}>Cancelled</option>
+      </select>
+      <button onclick="updateStatus('${escapeHTML(r.id)}')">Save Status</button>
+    `;
+
+    output.appendChild(card);
+  }
+}
+
+async function updateStatus(id) {
+  const select = document.getElementById("status-" + id);
+  const newStatus = select.value;
+
+  const { error } = await db
+    .from("pickup_requests")
+    .update({ status: newStatus })
+    .eq("id", id);
+
+  if (error) {
+    alert("Could not update status: " + error.message);
+    return;
+  }
+
+  alert("Request status updated.");
+  await loadRequests();
+}
+
+async function checkSession() {
+  const { data, error } = await db.auth.getSession();
+
+  if (error || !data.session) {
+    showLogin();
+    return;
+  }
+
+  await showDashboard(data.session.user);
+}
+
+db.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_OUT") {
+    showLogin();
+  }
+});
+
+checkSession();
+</script>
+</body>
+</html>
