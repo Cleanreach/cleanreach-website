@@ -398,7 +398,10 @@ $('pickup-form').addEventListener('submit',async event=>{
    $('customer-email').value=currentUser.email||'';
   }
 
-result.textContent='Submission error: '+(error.message||String(error));
+}catch(error){
+  console.error(error);
+  result.textContent='Submission error: '+(error.message||String(error));
+}
 
  button.disabled=false;
  button.textContent='Submit Pickup Request';
