@@ -218,8 +218,11 @@ $('register-form').addEventListener('submit',async event=>{
  const {data,error}=await supabase.auth.signUp({
   email,
   password,
-  options:{data:{full_name:name}}
- });
+  options:{
+    data:{full_name:name},
+    emailRedirectTo:'https://cleanreach.github.io/cleanreach-website/'
+  }
+});
 
  if(error){
   showMessage('register-message',error.message);
