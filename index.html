@@ -398,10 +398,7 @@ $('pickup-form').addEventListener('submit',async event=>{
    $('customer-email').value=currentUser.email||'';
   }
 
- }catch(error){
-  console.error(error);
-  result.textContent='We could not submit your request. Please try again. If the problem continues, contact CleanReach on WhatsApp.';
- }
+result.textContent='Submission error: '+(error.message||String(error));
 
  button.disabled=false;
  button.textContent='Submit Pickup Request';
